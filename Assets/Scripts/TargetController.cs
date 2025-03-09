@@ -13,10 +13,11 @@ public class TargetController : MonoBehaviour, ITargetInterface
         if (isHit) return; // Prevent multiple hits
         isHit = true;
 
+        GameManager.Instance.AddScore(5); // Add 5 points when hit
+
         PlayAnimation();
         PlayAudio();
 
-        // Start coroutine to destroy after 5 seconds
         StartCoroutine(DestroyAfterDelay());
     }
 
