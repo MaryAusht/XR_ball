@@ -3,17 +3,23 @@ using UnityEngine;
 
 public class TargetController : MonoBehaviour, ITargetInterface
 {
-    public Animator animator;  // Reference to Animator
-    public AudioSource audioSource;  // Reference to AudioSource
-    private bool isHit = false; // Prevent multiple triggers
-    public float destroyDelay = 2f; // Time before destroying the object
+    public Animator animator;
+    public AudioSource audioSource;
+    private bool isHit = false;
+    public float destroyDelay = 2f;
+    private TargetSpawner spawner;
+
+    private void Start()
+    {
+        spawner = FindObjectOfType<TargetSpawner>(); // Find the spawner
+    }
 
     public void TargetShot()
     {
-        if (isHit) return; // Prevent multiple hits
+        if (isHit) return;
         isHit = true;
 
-        GameManager.Instance.AddScore(5); // Add 5 points when hit
+        GameManager.Instance.AddScore(5);
 
         PlayAnimation();
         PlayAudio();
@@ -33,14 +39,19 @@ public class TargetController : MonoBehaviour, ITargetInterface
     {
         if (animator != null)
         {
-            animator.SetTrigger("Hit"); // Make sure "Hit" trigger exists in Animator
+            animator.SetTrigger("Hit");
         }
     }
 
     private IEnumerator DestroyAfterDelay()
     {
-        yield return new WaitForSeconds(destroyDelay); // Wait exactly 5 seconds
+        yield return new WaitForSeconds(destroyDelay);
 
-        Destroy(gameObject); // Destroy the target after 5 seconds
+        if (spawner != null)
+        {
+            spawner.SpawnNewTarget(); // Spawn a new target immediately
+        }
+
+        Destroy(gameObject);
     }
 }
