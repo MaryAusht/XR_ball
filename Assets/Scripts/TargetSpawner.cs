@@ -1,6 +1,8 @@
 using UnityEngine;
 using System.Collections;
 using TMPro;
+using System.Diagnostics;
+using System;
 
 public class TargetSpawner : MonoBehaviour
 {
@@ -30,18 +32,22 @@ public class TargetSpawner : MonoBehaviour
         {
             if (countdownText != null)
             {
-                countdownText.text = "Time Left: " + Mathf.CeilToInt(remainingTime).ToString() + "s";
+                int minutes = Mathf.FloorToInt(remainingTime / 60);
+                int seconds = Mathf.FloorToInt(remainingTime % 60);
+                int milliseconds = Mathf.FloorToInt((remainingTime * 100) % 100);
+
+                countdownText.text = string.Format("{0:00}:{1:00}:{2:00}", minutes, seconds, milliseconds);
             }
 
-            yield return new WaitForSeconds(1f);
-            remainingTime -= 1f;
+            yield return null; // Update every frame for milliseconds accuracy
+            remainingTime -= Time.deltaTime;
         }
 
         gameActive = false;
 
         if (countdownText != null)
         {
-            countdownText.text = "Time's Up!";
+            countdownText.text = "00:00:00";
         }
 
         if (currentTarget != null)
@@ -49,9 +55,8 @@ public class TargetSpawner : MonoBehaviour
             Destroy(currentTarget);
         }
 
-        Debug.Log("Game Over!");
+        //Debug.Log("Game Over!");
     }
-
 
     public void SpawnNewTarget()
     {
@@ -63,9 +68,9 @@ public class TargetSpawner : MonoBehaviour
         }
 
         Vector3 randomPosition = new Vector3(
-            Random.Range(spawnAreaMin.x, spawnAreaMax.x),
-            Random.Range(spawnAreaMin.y, spawnAreaMax.y),
-            Random.Range(spawnAreaMin.z, spawnAreaMax.z)
+            UnityEngine.Random.Range(spawnAreaMin.x, spawnAreaMax.x),
+            UnityEngine.Random.Range(spawnAreaMin.y, spawnAreaMax.y),
+            UnityEngine.Random.Range(spawnAreaMin.z, spawnAreaMax.z)
         );
 
         currentTarget = Instantiate(targetPrefab, randomPosition, Quaternion.identity);
