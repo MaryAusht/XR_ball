@@ -3,28 +3,51 @@ using UnityEngine;
 
 public class TargetController : MonoBehaviour, ITargetInterface
 {
-    public Animator animator;
-    public AudioSource audioSource;
-    private bool isHit = false;
-    public float destroyDelay = 2f;
-    private TargetSpawner spawner;
+    public Animator animator; // Reference to Animator
+    public AudioSource audioSource; // Reference to AudioSource
+
+    [SerializeField] private Material originalMaterial; // Default target material
+    [SerializeField] private Material hologramMaterial; // Hologram shader material
+
+    private Renderer targetRenderer; // Renderer component
+    private bool isHit = false; // Prevent multiple triggers
 
     private void Start()
     {
-        spawner = FindObjectOfType<TargetSpawner>(); // Find the spawner
+        targetRenderer = GetComponent<Renderer>(); // Get Renderer
+        if (targetRenderer == null)
+        {
+            UnityEngine.Debug.LogError("Renderer not found on target!");
+        }
+        else
+        {
+            originalMaterial = targetRenderer.material; // Store original material at start
+        }
     }
 
     public void TargetShot()
     {
-        if (isHit) return;
+        if (isHit) return; // Prevent multiple hits
         isHit = true;
 
-        GameManager.Instance.AddScore(5);
-
+        ChangeToHologram(); // Switch to hologram shader
         PlayAnimation();
         PlayAudio();
 
-        StartCoroutine(DestroyAfterDelay());
+        // Start coroutine to destroy after effects
+        StartCoroutine(DestroyAfterEffects());
+    }
+
+    private void ChangeToHologram()
+    {
+        if (targetRenderer != null && hologramMaterial != null)
+        {
+            targetRenderer.material = hologramMaterial;
+        }
+        else
+        {
+            UnityEngine.Debug.LogError("Hologram Material or Renderer missing!");
+        }
     }
 
     public void PlayAudio()
@@ -39,19 +62,32 @@ public class TargetController : MonoBehaviour, ITargetInterface
     {
         if (animator != null)
         {
-            animator.SetTrigger("Hit");
+            animator.SetTrigger("Hit"); // Ensure "Hit" is a trigger in Animator
         }
     }
 
-    private IEnumerator DestroyAfterDelay()
+    private IEnumerator DestroyAfterEffects()
     {
-        yield return new WaitForSeconds(destroyDelay);
+        // Wait for animation and sound to finish
+        float delay = Mathf.Max(GetAnimationLength(), audioSource.clip.length);
+        yield return new WaitForSeconds(delay);
 
-        if (spawner != null)
+        Destroy(gameObject); // Destroy the target after effects
+    }
+
+    private float GetAnimationLength()
+    {
+        if (animator != null && animator.runtimeAnimatorController != null)
         {
-            spawner.SpawnNewTarget(); // Spawn a new target immediately
+            AnimationClip[] clips = animator.runtimeAnimatorController.animationClips;
+            foreach (AnimationClip clip in clips)
+            {
+                if (clip.name == "Hit") // Ensure animation name is correct
+                {
+                    return clip.length;
+                }
+            }
         }
-
-        Destroy(gameObject);
+        return 1f; // Default fallback time
     }
 }

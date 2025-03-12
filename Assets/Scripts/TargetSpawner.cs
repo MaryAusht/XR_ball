@@ -58,6 +58,17 @@ public class TargetSpawner : MonoBehaviour
         //Debug.Log("Game Over!");
     }
 
+    public void StartSpawningTargets()
+    {
+        if (!gameActive)
+        {
+            gameActive = true;
+            StartCoroutine(GameTimerWithUI());
+            SpawnNewTarget();
+        }
+    }
+
+
     public void SpawnNewTarget()
     {
         if (!gameActive) return;

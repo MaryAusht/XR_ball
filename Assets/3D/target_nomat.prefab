@@ -128,7 +128,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   animator: {fileID: 5424185948855212826}
   audioSource: {fileID: -1348711892974276636}
-  destroyDelay: 2
+  originalMaterial: {fileID: 2100000, guid: 22ac03b6a22ad624d885301d9eb418be, type: 2}
+  hologramMaterial: {fileID: 2100000, guid: bbc2c94659bcd5f44af744614bd911fc, type: 2}
 --- !u!95 &5424185948855212826
 Animator:
   serializedVersion: 5
@@ -161,7 +162,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 8300000, guid: 194048e8626398c41adc882c9738198d, type: 3}
-  m_PlayOnAwake: 1
+  m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
   Loop: 0
