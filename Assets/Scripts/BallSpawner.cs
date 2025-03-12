@@ -1,28 +1,31 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+
 public class BallSpawner : MonoBehaviour
 {
-    public GameObject ballPrefab;  // Assign the Ball Prefab in the Inspector
-    public Transform playerCamera; // Assign the Player's Camera (Meta Camera Rig)
-    public float spawnDistance = 0.7f; // Distance in front of the player
-    public Vector3 spawnOffset = new Vector3(0, -0.2f, 0); // Adjust height slightly
-    private GameObject spawnedBall; // Keep track of the spawned ball
-    void Start()
+    public GameObject prefab; // Assign the ball prefab in Inspector
+    public float spawnSpeed = 5f; // Adjust as needed
+
+    void Update()
     {
-        if (spawnedBall == null) // Check if a ball already exists
+        // Check if the secondary index trigger is pressed on the controller
+        if (OVRInput.GetDown(OVRInput.Button.SecondaryIndexTrigger))
         {
-            SpawnBall(); // Spawn the ball only once
+            // Instantiate a new ball at the spawner's position
+            GameObject spawnedBall = Instantiate(prefab, transform.position, Quaternion.identity);
+
+            // Get the Rigidbody component of the spawned ball
+            Rigidbody spawnedBallRB = spawnedBall.GetComponent<Rigidbody>();
+
+            // Apply forward velocity to shoot the ball
+            if (spawnedBallRB != null)
+            {
+                spawnedBallRB.velocity = transform.forward * spawnSpeed;
+            }
+
+            // Add the BallCollisionHandler script to track collisions
+            spawnedBall.AddComponent<BallCollisionHandler>();
         }
-    }
-    void SpawnBall()
-    {
-        if (ballPrefab == null || playerCamera == null)
-        {
-            Debug.LogError("BallPrefab or PlayerCamera is not assigned!");
-            return;
-        }
-        // Calculate spawn position in front of the camera
-        Vector3 spawnPosition = playerCamera.position + (playerCamera.forward * spawnDistance) + spawnOffset;
-        // Instantiate the ball and store reference
-        spawnedBall = Instantiate(ballPrefab, spawnPosition, Quaternion.identity);
     }
 }
