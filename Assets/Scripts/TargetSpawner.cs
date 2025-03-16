@@ -1,8 +1,6 @@
 using UnityEngine;
 using System.Collections;
 using TMPro;
-using System.Diagnostics;
-using System;
 
 public class TargetSpawner : MonoBehaviour
 {
@@ -10,8 +8,8 @@ public class TargetSpawner : MonoBehaviour
     public Vector3 spawnAreaMin = new Vector3(-2f, 1f, 1f);
     public Vector3 spawnAreaMax = new Vector3(2f, 2f, 4f);
     public float respawnTime = 10f;
-    public float gameDuration = 60f; // Total time for the experience
-    public TMP_Text countdownText; // Assign in Inspector
+    public float gameDuration = 60f;
+    public TMP_Text countdownText;
     private float remainingTime;
 
     private GameObject currentTarget;
@@ -20,7 +18,7 @@ public class TargetSpawner : MonoBehaviour
 
     private void Start()
     {
-        StartCoroutine(GameTimerWithUI()); // Start 60s countdown
+        StartCoroutine(GameTimerWithUI());
         SpawnNewTarget();
     }
 
@@ -35,11 +33,10 @@ public class TargetSpawner : MonoBehaviour
                 int minutes = Mathf.FloorToInt(remainingTime / 60);
                 int seconds = Mathf.FloorToInt(remainingTime % 60);
                 int milliseconds = Mathf.FloorToInt((remainingTime * 100) % 100);
-
                 countdownText.text = string.Format("{0:00}:{1:00}:{2:00}", minutes, seconds, milliseconds);
             }
 
-            yield return null; // Update every frame for milliseconds accuracy
+            yield return null;
             remainingTime -= Time.deltaTime;
         }
 
@@ -55,7 +52,7 @@ public class TargetSpawner : MonoBehaviour
             Destroy(currentTarget);
         }
 
-        //Debug.Log("Game Over!");
+        GameManager.Instance.EndGame();
     }
 
     public void StartSpawningTargets()
@@ -68,7 +65,6 @@ public class TargetSpawner : MonoBehaviour
         }
     }
 
-
     public void SpawnNewTarget()
     {
         if (!gameActive) return;
@@ -79,18 +75,18 @@ public class TargetSpawner : MonoBehaviour
         }
 
         Vector3 randomPosition = new Vector3(
-            UnityEngine.Random.Range(spawnAreaMin.x, spawnAreaMax.x),
-            UnityEngine.Random.Range(spawnAreaMin.y, spawnAreaMax.y),
-            UnityEngine.Random.Range(spawnAreaMin.z, spawnAreaMax.z)
+            Random.Range(spawnAreaMin.x, spawnAreaMax.x),
+            Random.Range(spawnAreaMin.y, spawnAreaMax.y),
+            Random.Range(spawnAreaMin.z, spawnAreaMax.z)
         );
 
         currentTarget = Instantiate(targetPrefab, randomPosition, Quaternion.identity);
 
-        // Restart the 10s timer for next spawn (if target not hit)
         if (respawnCoroutine != null)
         {
             StopCoroutine(respawnCoroutine);
         }
+
         respawnCoroutine = StartCoroutine(AutoRespawnTimer());
     }
 
@@ -100,7 +96,15 @@ public class TargetSpawner : MonoBehaviour
 
         if (currentTarget != null && gameActive)
         {
+            Destroy(currentTarget);
             SpawnNewTarget();
         }
+    }
+
+    public void TargetDestroyed()
+    {
+        if (!gameActive) return;
+
+        SpawnNewTarget();
     }
 }

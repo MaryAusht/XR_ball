@@ -88,11 +88,17 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    private void EndGame()
+    public void EndGame()
     {
         isGameOver = true;
-        gameOverUI.SetActive(true); // Show Game Over UI
-        finalScoreText.gameObject.SetActive(true);
-        finalScoreText.text = "Your Score: " + score;
+
+        if (gameOverUI != null)
+            gameOverUI.SetActive(true);
+
+        if (finalScoreText != null)
+        {
+            finalScoreText.gameObject.SetActive(true);
+            finalScoreText.text = "Final Score: " + score;
+        }
     }
 }

@@ -3,38 +3,46 @@ using UnityEngine;
 
 public class TargetController : MonoBehaviour, ITargetInterface
 {
-    public Animator animator; // Reference to Animator
-    public AudioSource audioSource; // Reference to AudioSource
+    public Animator animator;
+    public AudioSource audioSource;
 
-    [SerializeField] private Material originalMaterial; // Default target material
-    [SerializeField] private Material hologramMaterial; // Hologram shader material
+    [SerializeField] private Material originalMaterial;
+    [SerializeField] private Material hologramMaterial;
 
-    private Renderer targetRenderer; // Renderer component
-    private bool isHit = false; // Prevent multiple triggers
+    private Renderer targetRenderer;
+    private bool isHit = false;
+
+    private TargetSpawner spawner;
+
+    private void Awake()
+    {
+        spawner = FindObjectOfType<TargetSpawner>();
+    }
 
     private void Start()
     {
-        targetRenderer = GetComponent<Renderer>(); // Get Renderer
+        targetRenderer = GetComponent<Renderer>();
         if (targetRenderer == null)
         {
-            UnityEngine.Debug.LogError("Renderer not found on target!");
+            Debug.LogError("Renderer not found on target!");
         }
         else
         {
-            originalMaterial = targetRenderer.material; // Store original material at start
+            originalMaterial = targetRenderer.material;
         }
     }
 
     public void TargetShot()
     {
-        if (isHit) return; // Prevent multiple hits
+        if (isHit) return;
         isHit = true;
 
-        ChangeToHologram(); // Switch to hologram shader
+        GameManager.Instance.AddScore(5); // <--- This updates the score
+
+        ChangeToHologram();
         PlayAnimation();
         PlayAudio();
 
-        // Start coroutine to destroy after effects
         StartCoroutine(DestroyAfterEffects());
     }
 
@@ -46,7 +54,7 @@ public class TargetController : MonoBehaviour, ITargetInterface
         }
         else
         {
-            UnityEngine.Debug.LogError("Hologram Material or Renderer missing!");
+            Debug.LogError("Hologram Material or Renderer missing!");
         }
     }
 
@@ -62,17 +70,21 @@ public class TargetController : MonoBehaviour, ITargetInterface
     {
         if (animator != null)
         {
-            animator.SetTrigger("Hit"); // Ensure "Hit" is a trigger in Animator
+            animator.SetTrigger("Hit");
         }
     }
 
     private IEnumerator DestroyAfterEffects()
     {
-        // Wait for animation and sound to finish
-        float delay = Mathf.Max(GetAnimationLength(), audioSource.clip.length);
+        float delay = Mathf.Max(GetAnimationLength(), audioSource != null ? audioSource.clip.length : 0f);
         yield return new WaitForSeconds(delay);
 
-        Destroy(gameObject); // Destroy the target after effects
+        if (spawner != null)
+        {
+            spawner.TargetDestroyed();
+        }
+
+        Destroy(gameObject);
     }
 
     private float GetAnimationLength()
@@ -82,12 +94,12 @@ public class TargetController : MonoBehaviour, ITargetInterface
             AnimationClip[] clips = animator.runtimeAnimatorController.animationClips;
             foreach (AnimationClip clip in clips)
             {
-                if (clip.name == "Hit") // Ensure animation name is correct
+                if (clip.name == "Hit")
                 {
                     return clip.length;
                 }
             }
         }
-        return 1f; // Default fallback time
+        return 1f;
     }
 }
