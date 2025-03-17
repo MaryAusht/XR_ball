@@ -1,18 +1,17 @@
 using System.Diagnostics;
-using TMPro; // Import TMP namespace
+using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
-    public static GameManager Instance; // Singleton for GameManager
+    public static GameManager Instance; // Singleton
 
     public int score = 0;
     public TMP_Text scoreText; // UI Text for score display
     public GameObject gameOverUI; // UI Panel for Game Over
-    public TMP_Text finalScoreText; // UI Text to show final score
+    public TMP_Text finalScoreText; // UI Text for final score
     public TargetSpawner targetSpawner; // Reference to TargetSpawner (Assign in Inspector)
-    public GameObject welcomeUI; // Reference to the Welcome UI Panel
+    public GameObject welcomeUI; // Welcome UI Panel
 
     public float gameDuration = 60f; // Game duration in seconds
     private bool isGameOver = false;
@@ -26,46 +25,39 @@ public class GameManager : MonoBehaviour
         else
         {
             Destroy(gameObject);
+            return;
         }
     }
 
     private void Start()
     {
-        gameOverUI.SetActive(false); // Hide Game Over UI at the start
-        finalScoreText.gameObject.SetActive(false);
+        ResetUI();
+    }
 
-        if (welcomeUI != null)
-        {
-            welcomeUI.SetActive(true); // Show welcome UI at the start
-        }
-        else
-        {
-            UnityEngine.Debug.LogError("Your error message here"); 
-        }
+    private void ResetUI()
+    {
+        if (gameOverUI != null) gameOverUI.SetActive(false);
+        if (finalScoreText != null) finalScoreText.gameObject.SetActive(false);
+        if (welcomeUI != null) welcomeUI.SetActive(true);
     }
 
     public void StartGame()
     {
         if (targetSpawner == null)
         {
-            UnityEngine.Debug.LogError("TargetSpawner is NOT assigned in GameManager!");
+            UnityEngine.Debug.Log("TargetSpawner is NOT assigned in GameManager!");
             return;
         }
 
-        if (welcomeUI != null)
-        {
-            welcomeUI.SetActive(false); // Hide welcome UI when game starts
-        }
+        ResetUI(); // Hide game over UI and reset score
+        if (welcomeUI != null) welcomeUI.SetActive(false);
 
-        gameOverUI.SetActive(false); // Hide Game Over UI
-        finalScoreText.gameObject.SetActive(false);
-
-        score = 0; // Reset score
+        score = 0;
         UpdateScoreUI();
 
-        isGameOver = false; // Reset game over state
+        isGameOver = false;
+        targetSpawner.SpawnNewTarget(); // Start target spawning
 
-        targetSpawner.StartSpawningTargets(); // Start spawning targets
         Invoke(nameof(EndGame), gameDuration); // Start game timer
     }
 
@@ -84,7 +76,7 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            UnityEngine.Debug.LogError("ScoreText UI is NOT assigned in GameManager!");
+            UnityEngine.Debug.Log("ScoreText UI is NOT assigned in GameManager!");
         }
     }
 
@@ -92,13 +84,21 @@ public class GameManager : MonoBehaviour
     {
         isGameOver = true;
 
-        if (gameOverUI != null)
-            gameOverUI.SetActive(true);
-
+        if (gameOverUI != null) 
+            
+           gameOverUI.SetActive(true);
+        
+        
         if (finalScoreText != null)
         {
             finalScoreText.gameObject.SetActive(true);
             finalScoreText.text = "Final Score: " + score;
+        }
+
+        // Hide score UI
+        if (scoreText != null)
+        {
+            scoreText.gameObject.SetActive(false);
         }
     }
 }
