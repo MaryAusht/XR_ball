@@ -4810,7 +4810,7 @@ MonoBehaviour:
   maxSpawnDistance: 4.5
   minHeight: 1
   maxHeight: 2
-  respawnTime: 10
+  respawnTime: 3
   gameDuration: 60
   countdownText: {fileID: 1153318452}
 --- !u!1 &315100641

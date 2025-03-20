@@ -2,6 +2,8 @@ using UnityEngine;
 using System.Collections;
 using TMPro;
 using System;
+using Meta.XR.MRUtilityKit;
+using System.Collections.Generic;
 
 public class TargetSpawner : MonoBehaviour
 {
@@ -10,7 +12,7 @@ public class TargetSpawner : MonoBehaviour
     public float maxSpawnDistance = 6f;
     public float minHeight = 1f;
     public float maxHeight = 3f;
-    public float respawnTime = 10f;
+    public float respawnTime = 5f;
     public float gameDuration = 60f;
 
     public TMP_Text countdownText;
@@ -20,8 +22,27 @@ public class TargetSpawner : MonoBehaviour
     private bool gameActive = true;
     private float remainingTime;
 
+    private MRUKRoom mrukRoom;
+
     private void Start()
     {
+        StartCoroutine(WaitForMRUKAndStartGame());
+    }
+
+    private IEnumerator WaitForMRUKAndStartGame()
+    {
+        while (MRUK.Instance == null || !MRUK.Instance.IsInitialized)
+        {
+            yield return null;
+        }
+
+        mrukRoom = MRUK.Instance.GetCurrentRoom();
+        if (mrukRoom == null)
+        {
+            Debug.LogError("No MRUK Room found.");
+            yield break;
+        }
+
         StartCoroutine(GameTimerWithUI());
         SpawnNewTarget();
     }
@@ -55,11 +76,10 @@ public class TargetSpawner : MonoBehaviour
     {
         gameActive = false;
 
-        // Hide countdown text
         if (countdownText != null)
         {
             countdownText.text = "00:00:00";
-            countdownText.gameObject.SetActive(false); // Hides the text UI
+            countdownText.gameObject.SetActive(false);
         }
 
         if (currentTarget != null)
@@ -72,9 +92,8 @@ public class TargetSpawner : MonoBehaviour
 
     public void SpawnNewTarget()
     {
-        if (!gameActive) return;
+        if (!gameActive || mrukRoom == null) return;
 
-        // Destroy existing target before spawning a new one
         if (currentTarget != null)
         {
             Destroy(currentTarget);
@@ -83,14 +102,10 @@ public class TargetSpawner : MonoBehaviour
         Vector3 spawnPosition = GetRandomSpawnPosition();
         currentTarget = Instantiate(targetPrefab, spawnPosition, Quaternion.identity);
 
-        // Make the target face the player
         Transform playerTransform = Camera.main.transform;
         currentTarget.transform.LookAt(playerTransform);
-
-        // Apply an extra rotation correction (since your Z-axis is rotated 90°)
         currentTarget.transform.rotation *= Quaternion.Euler(0, 180, 90);
 
-        // Reset the respawn timer
         if (respawnCoroutine != null)
         {
             StopCoroutine(respawnCoroutine);
@@ -100,36 +115,73 @@ public class TargetSpawner : MonoBehaviour
 
     private Vector3 GetRandomSpawnPosition()
     {
-        Transform playerTransform = Camera.main.transform;
+        if (mrukRoom == null || mrukRoom.Anchors == null || mrukRoom.Anchors.Count == 0)
+        {
+            Debug.LogWarning("MRUK Room or anchors not available. Fallback to default.");
+            return Camera.main.transform.position + Vector3.forward * 3f;
+        }
 
-        float randomDistance = UnityEngine.Random.Range(minSpawnDistance, maxSpawnDistance);
-        float randomAngle = UnityEngine.Random.Range(0f, 360f);
+        // Calculate bounds from all anchor positions
+        Bounds bounds = new Bounds();
+        bool hasBounds = false;
 
-        // Convert polar coordinates to world position
-        Vector3 spawnPosition = playerTransform.position +
-                                Quaternion.Euler(0, randomAngle, 0) * (Vector3.forward * randomDistance);
+        foreach (var anchor in mrukRoom.Anchors)
+        {
+            if (anchor == null) continue;
 
-        // Ensure height stays within min and max range
-        spawnPosition.y = Mathf.Clamp(playerTransform.position.y + UnityEngine.Random.Range(minHeight, maxHeight),
-                                      playerTransform.position.y + minHeight,
-                                      playerTransform.position.y + maxHeight);
+            Vector3 pos = anchor.transform.position;
+            if (!hasBounds)
+            {
+                bounds = new Bounds(pos, Vector3.zero);
+                hasBounds = true;
+            }
+            else
+            {
+                bounds.Encapsulate(pos);
+            }
+        }
 
-        return spawnPosition;
+        if (!hasBounds)
+        {
+            return Camera.main.transform.position + Vector3.forward * 3f;
+        }
+
+        Vector3 playerPosition = Camera.main.transform.position;
+
+        float margin = 0.3f; // distance from walls
+
+        for (int i = 0; i < 20; i++)
+        {
+            float x = UnityEngine.Random.Range(bounds.min.x + margin, bounds.max.x - margin);
+            float z = UnityEngine.Random.Range(bounds.min.z + margin, bounds.max.z - margin);
+            float y = bounds.min.y + UnityEngine.Random.Range(minHeight, maxHeight);
+
+            Vector3 candidate = new Vector3(x, y, z);
+            float distance = Vector3.Distance(playerPosition, candidate);
+
+            if (distance >= minSpawnDistance && distance <= maxSpawnDistance)
+            {
+                return candidate;
+            }
+        }
+
+        // Fallback if nothing valid is found
+        Debug.LogWarning("Fallback spawn position used.");
+        return playerPosition + Vector3.forward * Mathf.Clamp(maxSpawnDistance, 1f, 5f);
     }
-
 
 
     private IEnumerator AutoRespawnTimer()
     {
         yield return new WaitForSeconds(respawnTime);
 
-        if (gameActive) // Only destroy and respawn if the game is still running
+        if (gameActive)
         {
             if (currentTarget != null)
             {
                 Destroy(currentTarget);
             }
-            SpawnNewTarget(); // Spawn a new target
+            SpawnNewTarget();
         }
     }
 
