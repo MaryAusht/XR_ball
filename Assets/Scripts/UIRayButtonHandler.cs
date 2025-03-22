@@ -8,4 +8,10 @@ public class UIRayButtonHandler : MonoBehaviour
     {
         SceneManager.LoadScene("CountdownTimer");
     }
+
+    public void QuitGame()
+    {
+        Debug.Log("Quitting application...");
+        Application.Quit();
+    }
 }

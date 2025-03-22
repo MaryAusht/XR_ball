@@ -5,9 +5,18 @@ public class RestartControllerTrigger : MonoBehaviour
     public GameObject uiPanel; // Assign in Inspector
     public GameObject rayInteractorObject; // Assign Ray Interactor here
     private bool isPaused = false;
-
+    public GameObject rightRay;
     void Start()
     {
+
+        {
+            if (rightRay != null)
+            {
+                Debug.Log("RightRay disabled at Start");
+                rightRay.SetActive(false); // This should override anything
+            }
+        }
+
         uiPanel.SetActive(false);
         rayInteractorObject.SetActive(false); // Hide ray at start
         Time.timeScale = 1f;
