@@ -24,6 +24,38 @@ public class TargetSpawner : MonoBehaviour
 
     private MRUKRoom mrukRoom;
 
+
+    //to pause the game 
+    private bool isPaused = false;
+
+    public void SetPaused(bool paused)
+    {
+        isPaused = paused;
+
+        if (currentTarget != null)
+        {
+            TargetController controller = currentTarget.GetComponent<TargetController>();
+            if (controller != null)
+            {
+                controller.SetPaused(paused);
+            }
+
+            FloatingTarget mover = currentTarget.GetComponent<FloatingTarget>();
+            if (mover != null)
+            {
+                mover.SetPaused(paused);
+            }
+        }
+
+        // When unpausing, if there's no target, spawn a new one
+        if (!paused && currentTarget == null && gameActive)
+        {
+            Debug.Log("Resumed — spawning new target...");
+            SpawnNewTarget();
+        }
+    }
+
+
     private void Start()
     {
         StartCoroutine(WaitForMRUKAndStartGame());
@@ -53,9 +85,13 @@ public class TargetSpawner : MonoBehaviour
 
         while (remainingTime > 0f)
         {
-            UpdateCountdownUI();
+            if (!isPaused)
+            {
+                remainingTime -= Time.deltaTime;
+                UpdateCountdownUI();
+            }
+
             yield return null;
-            remainingTime -= Time.deltaTime;
         }
 
         EndGame();
@@ -63,6 +99,8 @@ public class TargetSpawner : MonoBehaviour
 
     private void UpdateCountdownUI()
     {
+        if (isPaused) return;  // to pause
+
         if (countdownText != null)
         {
             int minutes = Mathf.FloorToInt(remainingTime / 60);
@@ -92,7 +130,7 @@ public class TargetSpawner : MonoBehaviour
 
     public void SpawnNewTarget()
     {
-        if (!gameActive || mrukRoom == null) return;
+        if (!gameActive || isPaused || mrukRoom == null) return;
 
         if (currentTarget != null)
         {
@@ -175,7 +213,7 @@ public class TargetSpawner : MonoBehaviour
     {
         yield return new WaitForSeconds(respawnTime);
 
-        if (gameActive)
+        if (gameActive && !isPaused)
         {
             if (currentTarget != null)
             {

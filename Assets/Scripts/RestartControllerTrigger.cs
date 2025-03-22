@@ -1,32 +1,39 @@
 using UnityEngine;
+
 public class RestartControllerTrigger : MonoBehaviour
 {
-    public GameObject uiPanel; // Assign the UI panel in Inspector
-    private bool isPaused = false; // Track game state
+    public GameObject uiPanel; // Assign in Inspector
+    public GameObject rayInteractorObject; // Assign Ray Interactor here
+    private bool isPaused = false;
+
     void Start()
     {
-        uiPanel.SetActive(false); // Hide UI panel at start
-        Time.timeScale = 1f; // Ensure the game starts unpaused
+        uiPanel.SetActive(false);
+        rayInteractorObject.SetActive(false); // Hide ray at start
+        Time.timeScale = 1f;
     }
+
     void Update()
     {
-        // Check if the Secondary Hand Trigger (Grip button) is pressed
         if (OVRInput.GetDown(OVRInput.Button.SecondaryHandTrigger))
         {
-            ToggleUIPanel(); // Show/hide UI and pause/resume game
+            ToggleUIPanel();
         }
     }
+
     void ToggleUIPanel()
     {
-        isPaused = !isPaused; // Toggle pause state
-        uiPanel.SetActive(isPaused); // Show or hide UI panel
+        isPaused = !isPaused;
+        uiPanel.SetActive(isPaused);
+        rayInteractorObject.SetActive(isPaused); // Show/hide ray
+
         if (isPaused)
         {
-            Time.timeScale = 0f; // Pause game
+            GameManager.Instance.targetSpawner.SetPaused(true);
         }
         else
         {
-            Time.timeScale = 1f; // Resume game
+            GameManager.Instance.targetSpawner.SetPaused(false);
         }
     }
 }

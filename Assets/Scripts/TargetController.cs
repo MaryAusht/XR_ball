@@ -102,4 +102,12 @@ public class TargetController : MonoBehaviour, ITargetInterface
         }
         return 1f;
     }
+
+    public void SetPaused(bool paused)
+    {
+        if (animator != null)
+        {
+            animator.enabled = !paused;
+        }
+    }
 }
