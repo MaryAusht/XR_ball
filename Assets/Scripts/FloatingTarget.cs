@@ -6,8 +6,6 @@ public class FloatingTarget : MonoBehaviour
     public float floatHeight = 0.5f;
     private Vector3 startPos;
 
-    private bool isPaused = false;
-
     private void Start()
     {
         startPos = transform.position;
@@ -15,14 +13,10 @@ public class FloatingTarget : MonoBehaviour
 
     private void Update()
     {
-        if (isPaused) return; // Stop floating when paused
+        // If game is paused, skip floating
+        if (Time.timeScale == 0f) return;
 
         float newY = startPos.y + Mathf.Sin(Time.time * floatSpeed) * floatHeight;
         transform.position = new Vector3(startPos.x, newY, startPos.z);
-    }
-
-    public void SetPaused(bool paused)
-    {
-        isPaused = paused;
     }
 }

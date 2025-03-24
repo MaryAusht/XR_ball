@@ -1,39 +1,59 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class RestartControllerTrigger : MonoBehaviour
 {
-    public GameObject uiPanel; // Assign in Inspector
-    public GameObject rayInteractorObject; // Assign Ray Interactor here
+    public string restartSceneName = "Restart"; // Ensure this matches the exact name of your scene
+    public GameObject mainRigRoot;
+
     private bool isPaused = false;
 
     void Start()
     {
-        uiPanel.SetActive(false);
-        rayInteractorObject.SetActive(false); // Hide ray at start
         Time.timeScale = 1f;
+
+        if (mainRigRoot != null)
+            mainRigRoot.SetActive(true);
+        else
+            Debug.LogWarning("Main Rig not assigned!");
     }
 
     void Update()
     {
         if (OVRInput.GetDown(OVRInput.Button.SecondaryHandTrigger))
         {
-            ToggleUIPanel();
+            if (!isPaused)
+                PauseGame();
+            else
+                ResumeGame();
         }
     }
 
-    void ToggleUIPanel()
+    void PauseGame()
     {
-        isPaused = !isPaused;
-        uiPanel.SetActive(isPaused);
-        rayInteractorObject.SetActive(isPaused); // Show/hide ray
+        isPaused = true;
+        Time.timeScale = 0f;
 
-        if (isPaused)
+        if (mainRigRoot != null)
         {
-            GameManager.Instance.targetSpawner.SetPaused(true);
+            mainRigRoot.SetActive(false);
+            Debug.Log("Main Rig Deactivated");
         }
-        else
+
+        SceneManager.LoadSceneAsync(restartSceneName, LoadSceneMode.Additive);
+    }
+
+    void ResumeGame()
+    {
+        isPaused = false;
+        Time.timeScale = 1f;
+
+        if (mainRigRoot != null)
         {
-            GameManager.Instance.targetSpawner.SetPaused(false);
+            mainRigRoot.SetActive(true);
+            Debug.Log("Main Rig Reactivated");
         }
+
+        SceneManager.UnloadSceneAsync(restartSceneName);
     }
 }

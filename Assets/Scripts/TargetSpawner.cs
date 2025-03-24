@@ -1,7 +1,6 @@
 using UnityEngine;
 using System.Collections;
 using TMPro;
-using System;
 using Meta.XR.MRUtilityKit;
 using System.Collections.Generic;
 
@@ -20,41 +19,8 @@ public class TargetSpawner : MonoBehaviour
     private GameObject currentTarget;
     private Coroutine respawnCoroutine;
     private bool gameActive = true;
-    private float remainingTime;
 
     private MRUKRoom mrukRoom;
-
-
-    //to pause the game 
-    private bool isPaused = false;
-
-    public void SetPaused(bool paused)
-    {
-        isPaused = paused;
-
-        if (currentTarget != null)
-        {
-            TargetController controller = currentTarget.GetComponent<TargetController>();
-            if (controller != null)
-            {
-                controller.SetPaused(paused);
-            }
-
-            FloatingTarget mover = currentTarget.GetComponent<FloatingTarget>();
-            if (mover != null)
-            {
-                mover.SetPaused(paused);
-            }
-        }
-
-        // When unpausing, if there's no target, spawn a new one
-        if (!paused && currentTarget == null && gameActive)
-        {
-            Debug.Log("Resumed — spawning new target...");
-            SpawnNewTarget();
-        }
-    }
-
 
     private void Start()
     {
@@ -75,19 +41,22 @@ public class TargetSpawner : MonoBehaviour
             yield break;
         }
 
+        if (!GameStateManager.isPaused || GameStateManager.timeRemaining <= 0f)
+        {
+            GameStateManager.timeRemaining = gameDuration;
+        }
+
         StartCoroutine(GameTimerWithUI());
         SpawnNewTarget();
     }
 
     private IEnumerator GameTimerWithUI()
     {
-        remainingTime = gameDuration;
-
-        while (remainingTime > 0f)
+        while (GameStateManager.timeRemaining > 0f)
         {
-            if (!isPaused)
+            if (!PauseManager.isPaused && Time.timeScale != 0f)
             {
-                remainingTime -= Time.deltaTime;
+                GameStateManager.timeRemaining -= Time.deltaTime;
                 UpdateCountdownUI();
             }
 
@@ -99,13 +68,15 @@ public class TargetSpawner : MonoBehaviour
 
     private void UpdateCountdownUI()
     {
-        if (isPaused) return;  // to pause
+        if (PauseManager.isPaused || Time.timeScale == 0f)
+            return;
 
         if (countdownText != null)
         {
-            int minutes = Mathf.FloorToInt(remainingTime / 60);
-            int seconds = Mathf.FloorToInt(remainingTime % 60);
-            int milliseconds = Mathf.FloorToInt((remainingTime * 100) % 100);
+            float remaining = GameStateManager.timeRemaining;
+            int minutes = Mathf.FloorToInt(remaining / 60);
+            int seconds = Mathf.FloorToInt(remaining % 60);
+            int milliseconds = Mathf.FloorToInt((remaining * 100) % 100);
             countdownText.text = string.Format("{0:00}:{1:00}:{2:00}", minutes, seconds, milliseconds);
         }
     }
@@ -125,12 +96,13 @@ public class TargetSpawner : MonoBehaviour
             Destroy(currentTarget);
         }
 
+        GameStateManager.timeRemaining = 0f;
         GameManager.Instance.EndGame();
     }
 
     public void SpawnNewTarget()
     {
-        if (!gameActive || isPaused || mrukRoom == null) return;
+        if (!gameActive || PauseManager.isPaused || Time.timeScale == 0f || mrukRoom == null) return;
 
         if (currentTarget != null)
         {
@@ -148,6 +120,7 @@ public class TargetSpawner : MonoBehaviour
         {
             StopCoroutine(respawnCoroutine);
         }
+
         respawnCoroutine = StartCoroutine(AutoRespawnTimer());
     }
 
@@ -159,7 +132,6 @@ public class TargetSpawner : MonoBehaviour
             return Camera.main.transform.position + Vector3.forward * 3f;
         }
 
-        // Calculate bounds from all anchor positions
         Bounds bounds = new Bounds();
         bool hasBounds = false;
 
@@ -184,36 +156,46 @@ public class TargetSpawner : MonoBehaviour
             return Camera.main.transform.position + Vector3.forward * 3f;
         }
 
+        // Shrink room bounds to avoid walls
+        float margin = 0.3f;
+        bounds.Expand(new Vector3(-margin * 2f, 0, -margin * 2f));
+
         Vector3 playerPosition = Camera.main.transform.position;
 
-        float margin = 0.3f; // distance from walls
-
-        for (int i = 0; i < 20; i++)
+        for (int i = 0; i < 30; i++)
         {
-            float x = UnityEngine.Random.Range(bounds.min.x + margin, bounds.max.x - margin);
-            float z = UnityEngine.Random.Range(bounds.min.z + margin, bounds.max.z - margin);
-            float y = bounds.min.y + UnityEngine.Random.Range(minHeight, maxHeight);
+            float x = Random.Range(bounds.min.x, bounds.max.x);
+            float z = Random.Range(bounds.min.z, bounds.max.z);
+            float y = bounds.max.y + 1f; // Start raycast from above
 
-            Vector3 candidate = new Vector3(x, y, z);
-            float distance = Vector3.Distance(playerPosition, candidate);
+            Vector3 rayOrigin = new Vector3(x, y, z);
 
-            if (distance >= minSpawnDistance && distance <= maxSpawnDistance)
+            // Raycast downward to find a floor
+            if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit hitInfo, 5f))
             {
-                return candidate;
+                float spawnHeight = Mathf.Clamp(hitInfo.point.y + Random.Range(minHeight, maxHeight), bounds.min.y + margin, bounds.max.y - margin);
+                Vector3 candidate = new Vector3(x, spawnHeight, z);
+                float distance = Vector3.Distance(playerPosition, candidate);
+
+                if (distance >= minSpawnDistance && distance <= maxSpawnDistance)
+                {
+                    return candidate;
+                }
             }
         }
 
-        // Fallback if nothing valid is found
-        Debug.LogWarning("Fallback spawn position used.");
+        Debug.LogWarning("Could not find valid spawn. Using fallback.");
         return playerPosition + Vector3.forward * Mathf.Clamp(maxSpawnDistance, 1f, 5f);
     }
+
+
 
 
     private IEnumerator AutoRespawnTimer()
     {
         yield return new WaitForSeconds(respawnTime);
 
-        if (gameActive && !isPaused)
+        if (gameActive && !PauseManager.isPaused && Time.timeScale != 0f)
         {
             if (currentTarget != null)
             {
@@ -225,7 +207,7 @@ public class TargetSpawner : MonoBehaviour
 
     public void TargetDestroyed()
     {
-        if (!gameActive) return;
+        if (!gameActive || PauseManager.isPaused) return;
         SpawnNewTarget();
     }
 }
