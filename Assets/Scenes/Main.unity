@@ -4041,6 +4041,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   score: 0
   scoreText: {fileID: 30859040}
+  countdownText: {fileID: 1153318452}
   gameOverUI: {fileID: 1891174423}
   finalScoreText: {fileID: 873124241}
   targetSpawner: {fileID: 313258046}
@@ -4809,11 +4810,9 @@ MonoBehaviour:
     type: 3}
   minSpawnDistance: 2
   maxSpawnDistance: 4.5
-  minHeight: 1
-  maxHeight: 2
+  minHeight: 0.3
+  maxHeight: 1
   respawnTime: 3
-  gameDuration: 60
-  countdownText: {fileID: 1153318452}
 --- !u!1 &315100641
 GameObject:
   m_ObjectHideFlags: 0
@@ -14963,6 +14962,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   restartSceneName: Restart
   mainRigRoot: {fileID: 19123926}
+  isPaused: 0
 --- !u!4 &964975346
 Transform:
   m_ObjectHideFlags: 0
