@@ -7,7 +7,7 @@ public class TargetSpawner : MonoBehaviour
 {
     public GameObject targetPrefab;
     public float minSpawnDistance = 2f;
-    public float maxSpawnDistance = 4.5f;
+    public float maxSpawnDistance = 3f;
     public float minHeight = 0.3f;
     public float maxHeight = 1.5f;
     public float respawnTime = 5f;

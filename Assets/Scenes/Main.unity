@@ -4808,11 +4808,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetPrefab: {fileID: 231109592243238281, guid: 6753339f98c8c4f4884c995176030573,
     type: 3}
-  minSpawnDistance: 2
-  maxSpawnDistance: 4.5
+  minSpawnDistance: 1.5
+  maxSpawnDistance: 3
   minHeight: 0.3
   maxHeight: 1
-  respawnTime: 3
+  respawnTime: 5
+  wallMargin: 1
 --- !u!1 &315100641
 GameObject:
   m_ObjectHideFlags: 0
@@ -14960,9 +14961,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e3eb28ee05ef60a459d3947a3655b73d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  restartSceneName: Restart
-  mainRigRoot: {fileID: 19123926}
-  isPaused: 0
 --- !u!4 &964975346
 Transform:
   m_ObjectHideFlags: 0

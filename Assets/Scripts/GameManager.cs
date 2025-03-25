@@ -176,6 +176,12 @@ public class GameManager : MonoBehaviour
         UnityEngine.Debug.Log("Game Over!");
         isGameOver = true;
 
+        // Stop target spawning here
+        if (targetSpawner != null)
+        {
+            targetSpawner.StopSpawning();
+        }
+
         if (gameOverUI != null)
         {
             gameOverUI.SetActive(true);
@@ -192,10 +198,17 @@ public class GameManager : MonoBehaviour
             scoreText.gameObject.SetActive(false);
         }
 
+        if (countdownText != null)
+        {
+            countdownText.gameObject.SetActive(false); //  Hide the timer
+        }
+
+
         GameStateManager.score = 0;
         GameStateManager.timeRemaining = gameDuration;
         GameStateManager.isPaused = false;
     }
+
 
     public float GetRemainingTime()
     {
